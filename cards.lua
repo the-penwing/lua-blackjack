@@ -19,6 +19,15 @@ local ranks = {
 	"King",
 	"Ace",
 }
+
+local deck = {}
+local function buildDeck()
+	for _, r in ipairs(ranks) do
+		for _, s in ipairs(suits) do
+			table.insert(deck, { rank = r, suit = s })
+		end
+	end
+end
 local function shuffle(t)
 	for i = #t, 2, -1 do
 		local j = math.random(i)
@@ -26,13 +35,7 @@ local function shuffle(t)
 	end
 end
 
-local deck = {}
-for _, r in ipairs(ranks) do
-	for _, s in ipairs(suits) do
-		table.insert(deck, { rank = r, suit = s })
-	end
-end
-
+buildDeck()
 shuffle(deck)
 
 local function dealCard()
@@ -51,7 +54,6 @@ local function cardValue(card)
 	end
 end
 
-local playerHand = {}
 local function calcHandValue(hand)
 	local total = 0
 	local aces = 0
@@ -68,4 +70,14 @@ local function calcHandValue(hand)
 	return total
 end
 
+local playerHand = {}
+local dealerHand = {}
 local playerHandValue = calcHandValue(playerHand)
+local dealerHandValue = calcHandValue(dealerHand)
+
+local function setupGame()
+	for _ = 1, 2 do
+		table.insert(playerHand, dealCard())
+		table.insert(dealerHand, dealCard())
+	end
+end
