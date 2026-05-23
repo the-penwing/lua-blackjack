@@ -1,5 +1,7 @@
 {
     "diagnostics.globals": [
-        "deck"
+        "deck",
+        "playerHand",
+        "dealerHand"
     ]
 }

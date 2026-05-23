@@ -1,24 +1,22 @@
-local suits = {
-	"Hearts",
-	"Diamonds",
-	"Spades",
-	"Clubs",
-}
-local ranks = {
-	"2",
-	"3",
-	"4",
-	"5",
-	"6",
-	"7",
-	"8",
-	"9",
-	"10",
-	"Jack",
-	"Queen",
-	"King",
-	"Ace",
-}
+-- ============================================================================
+-- BLACKJACK GAME
+-- ============================================================================
+
+-- Card setup
+local suits = { "Hearts", "Diamonds", "Spades", "Clubs" }
+local ranks = { "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King", "Ace" }
+
+-- Game state
+local deck = {}
+local playerHand = {}
+local dealerHand = {}
+local wins = 0
+local losses = 0
+local ties = 0
+
+-- ============================================================================
+-- DECK FUNCTIONS
+-- ============================================================================
 
 local function buildDeck()
 	for _, r in ipairs(ranks) do
@@ -27,6 +25,7 @@ local function buildDeck()
 		end
 	end
 end
+
 local function shuffle(t)
 	for i = #t, 2, -1 do
 		local j = math.random(i)
@@ -39,12 +38,18 @@ local function initDeck()
 	buildDeck()
 	shuffle(deck)
 end
+
 local function dealCard()
 	if #deck == 0 then
 		return
 	end
 	return table.remove(deck)
 end
+
+-- ============================================================================
+-- CARD & HAND FUNCTIONS
+-- ============================================================================
+
 local function cardValue(card)
 	if card.rank == "Ace" then
 		return 11
@@ -58,28 +63,28 @@ end
 local function calcHandValue(hand)
 	local total = 0
 	local aces = 0
+
 	for _, c in ipairs(hand) do
 		total = total + cardValue(c)
 		if c.rank == "Ace" then
 			aces = aces + 1
 		end
 	end
+
 	while total > 21 and aces > 0 do
 		total = total - 10
 		aces = aces - 1
 	end
+
 	return total
 end
 
-local wins = 0
-local losses = 0
-local ties = 0
-local function setupGame()
-	initDeck()
-	for _ = 1, 2 do
-		table.insert(playerHand, dealCard())
-		table.insert(dealerHand, dealCard())
-	end
+-- ============================================================================
+-- DISPLAY FUNCTIONS
+-- ============================================================================
+
+local function clearScreen()
+	os.execute("clear")
 end
 
 local function displayHands()
@@ -88,35 +93,53 @@ local function displayHands()
 		print(card.rank .. " of " .. card.suit)
 	end
 	print("Total value: " .. calcHandValue(playerHand))
-	print("Dealers Hand:")
+	print("\nDealers Hand:")
 	print(dealerHand[1].rank .. " of " .. dealerHand[1].suit)
-	print("Total value: " .. calcHandValue(dealerHand))
 end
+
 local function revealDealerHand()
-	print("Dealer reveals:")
+	print("\nDealer reveals:")
 	for _, card in ipairs(dealerHand) do
 		print(card.rank .. " of " .. card.suit)
 	end
 	print("Dealer total: " .. calcHandValue(dealerHand))
 end
 
+local function displayScores()
+	print("\nWins: " .. wins)
+	print("Losses: " .. losses)
+	print("Pushes (Ties): " .. ties)
+end
+
+-- ============================================================================
+-- GAME LOGIC
+-- ============================================================================
+
+local function setupGame()
+	for _ = 1, 2 do
+		table.insert(playerHand, dealCard())
+		table.insert(dealerHand, dealCard())
+	end
+end
+
 local function playerTurn()
 	displayHands()
 	while calcHandValue(playerHand) < 22 do
-		io.write("Hit or Stand? ")
+		io.write("\nHit or Stand? ")
 		local action = string.lower(io.read())
 		if action == "hit" then
 			table.insert(playerHand, dealCard())
+			clearScreen()
 			displayHands()
 		elseif action == "stand" then
-			displayHands()
 			break
 		else
 			print('Enter "hit" or "stand"')
 		end
 	end
+
 	if calcHandValue(playerHand) > 21 then
-		print("You Busted!!")
+		print("\nYou Busted!!")
 	end
 end
 
@@ -126,52 +149,57 @@ local function dealerTurn()
 	end
 end
 
-local function displayScores()
-	print("Wins: " .. wins)
-	print("Losses: " .. losses)
-	print("Pushes (Ties): " .. ties)
-end
-
 local function findWinner()
+	clearScreen()
+	revealDealerHand()
+
 	local playerValue = calcHandValue(playerHand)
 	local dealerValue = calcHandValue(dealerHand)
 
 	if playerValue > 21 then
-		print("Dealer Wins")
+		print("\nDealer Wins")
 		losses = losses + 1
 	elseif dealerValue > 21 then
-		print("You Win")
+		print("\nYou Win")
 		wins = wins + 1
 	elseif playerValue > dealerValue then
-		print("You Win")
+		print("\nYou Win")
 		wins = wins + 1
 	elseif dealerValue > playerValue then
-		print("Dealer Wins")
+		print("\nDealer Wins")
 		losses = losses + 1
 	else
-		print("Push (Tie)")
+		print("\nPush (Tie)")
 		ties = ties + 1
 	end
+
 	displayScores()
 end
+
 local function playRound()
 	playerHand = {}
 	dealerHand = {}
+	clearScreen()
 	initDeck()
 	setupGame()
 	playerTurn()
-	revealDealerHand()
 	dealerTurn()
 	findWinner()
 end
+
+-- ============================================================================
+-- MAIN GAME LOOP
+-- ============================================================================
 
 local playing = true
 
 while playing do
 	playRound()
-	io.write("Play again? (yes/no) ")
+	io.write("\nPlay again? (yes/no) ")
 	local answer = string.lower(io.read())
 	if answer == "no" then
 		playing = false
 	end
 end
+
+print("\nThanks for playing!")
