@@ -79,19 +79,6 @@ local function setupGame()
 		table.insert(dealerHand, dealCard())
 	end
 end
--- setupGame()
---
--- -- Print both hands
--- for _, card in ipairs(playerHand) do
---   print("Player: " .. card.rank .. " of " .. card.suit)
--- end
---
--- for _, card in ipairs(dealerHand) do
---   print("Dealer: " .. card.rank .. " of " .. card.suit)
--- end
---
--- print("Player hand value: " .. calcHandValue(playerHand))
--- print("Dealer hand value: " .. calcHandValue(dealerHand))
 
 local function displayHands()
 	print("Your Hand:")
@@ -102,6 +89,13 @@ local function displayHands()
 	print("Dealers Hand:")
 	print(dealerHand[1].rank .. " of " .. dealerHand[1].suit)
 	print("Total value: " .. calcHandValue(dealerHand))
+end
+local function revealDealerHand()
+	print("Dealer reveals:")
+	for _, card in ipairs(dealerHand) do
+		print(card.rank .. " of " .. card.suit)
+	end
+	print("Dealer total: " .. calcHandValue(dealerHand))
 end
 
 local function playerTurn()
@@ -124,5 +118,31 @@ local function playerTurn()
 	end
 end
 
+local function dealerTurn()
+	while calcHandValue(dealerHand) <= 16 do
+		table.insert(dealerHand, dealCard())
+	end
+end
+
+local function findWinner()
+	local playerValue = calcHandValue(playerHand)
+	local dealerValue = calcHandValue(dealerHand)
+
+	if playerValue > 21 then
+		print("Dealer Wins")
+	elseif dealerValue > 21 then
+		print("You Win")
+	elseif playerValue > dealerValue then
+		print("You Win")
+	elseif dealerValue > playerValue then
+		print("Dealer Wins")
+	else
+		print("Push (Tie)")
+	end
+end
+
 setupGame()
 playerTurn()
+revealDealerHand()
+dealerTurn()
+findWinner()
