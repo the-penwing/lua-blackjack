@@ -202,4 +202,4 @@ while playing do
 	end
 end
 
-print("\nThanks for playing!")
+print("\nWell Played, See you soon!!")
