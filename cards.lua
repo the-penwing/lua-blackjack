@@ -72,8 +72,6 @@ end
 
 local playerHand = {}
 local dealerHand = {}
-local playerHandValue = calcHandValue(playerHand)
-local dealerHandValue = calcHandValue(dealerHand)
 
 local function setupGame()
 	for _ = 1, 2 do
@@ -81,3 +79,50 @@ local function setupGame()
 		table.insert(dealerHand, dealCard())
 	end
 end
+-- setupGame()
+--
+-- -- Print both hands
+-- for _, card in ipairs(playerHand) do
+--   print("Player: " .. card.rank .. " of " .. card.suit)
+-- end
+--
+-- for _, card in ipairs(dealerHand) do
+--   print("Dealer: " .. card.rank .. " of " .. card.suit)
+-- end
+--
+-- print("Player hand value: " .. calcHandValue(playerHand))
+-- print("Dealer hand value: " .. calcHandValue(dealerHand))
+
+local function displayHands()
+	print("Your Hand:")
+	for _, card in ipairs(playerHand) do
+		print(card.rank .. " of " .. card.suit)
+	end
+	print("Total value: " .. calcHandValue(playerHand))
+	print("Dealers Hand:")
+	print(dealerHand[1].rank .. " of " .. dealerHand[1].suit)
+	print("Total value: " .. calcHandValue(dealerHand))
+end
+
+local function playerTurn()
+	displayHands()
+	while calcHandValue(playerHand) < 22 do
+		io.write("Hit or Stand? ")
+		local action = string.lower(io.read())
+		if action == "hit" then
+			table.insert(playerHand, dealCard())
+			displayHands()
+		elseif action == "stand" then
+			displayHands()
+			break
+		else
+			print('Enter "hit" or "stand"')
+		end
+	end
+	if calcHandValue(playerHand) > 21 then
+		print("You Busted!!")
+	end
+end
+
+setupGame()
+playerTurn()
