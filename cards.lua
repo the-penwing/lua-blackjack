@@ -143,8 +143,21 @@ local function findWinner()
 	end
 end
 
-setupGame()
-playerTurn()
-revealDealerHand()
-dealerTurn()
-findWinner()
+local function playRound()
+	setupGame()
+	playerTurn()
+	revealDealerHand()
+	dealerTurn()
+	findWinner()
+end
+
+local playing = true
+
+while playing do
+	playRound()
+	io.write("Play again? (yes/no) ")
+	local answer = string.lower(io.read())
+	if answer == "no" then
+		playing = false
+	end
+end
