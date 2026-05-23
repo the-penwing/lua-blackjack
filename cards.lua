@@ -71,9 +71,9 @@ local function calcHandValue(hand)
 	return total
 end
 
-local playerHand = {}
-local dealerHand = {}
-
+local wins = 0
+local losses = 0
+local ties = 0
 local function setupGame()
 	initDeck()
 	for _ = 1, 2 do
@@ -126,24 +126,38 @@ local function dealerTurn()
 	end
 end
 
+local function displayScores()
+	print("Wins: " .. wins)
+	print("Losses: " .. losses)
+	print("Pushes (Ties): " .. ties)
+end
+
 local function findWinner()
 	local playerValue = calcHandValue(playerHand)
 	local dealerValue = calcHandValue(dealerHand)
 
 	if playerValue > 21 then
 		print("Dealer Wins")
+		losses = losses + 1
 	elseif dealerValue > 21 then
 		print("You Win")
+		wins = wins + 1
 	elseif playerValue > dealerValue then
 		print("You Win")
+		wins = wins + 1
 	elseif dealerValue > playerValue then
 		print("Dealer Wins")
+		losses = losses + 1
 	else
 		print("Push (Tie)")
+		ties = ties + 1
 	end
+	displayScores()
 end
-
 local function playRound()
+	playerHand = {}
+	dealerHand = {}
+	initDeck()
 	setupGame()
 	playerTurn()
 	revealDealerHand()
