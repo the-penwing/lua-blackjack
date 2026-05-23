@@ -20,7 +20,6 @@ local ranks = {
 	"Ace",
 }
 
-local deck = {}
 local function buildDeck()
 	for _, r in ipairs(ranks) do
 		for _, s in ipairs(suits) do
@@ -35,9 +34,11 @@ local function shuffle(t)
 	end
 end
 
-buildDeck()
-shuffle(deck)
-
+local function initDeck()
+	deck = {}
+	buildDeck()
+	shuffle(deck)
+end
 local function dealCard()
 	if #deck == 0 then
 		return
@@ -74,6 +75,7 @@ local playerHand = {}
 local dealerHand = {}
 
 local function setupGame()
+	initDeck()
 	for _ = 1, 2 do
 		table.insert(playerHand, dealCard())
 		table.insert(dealerHand, dealCard())
