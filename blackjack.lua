@@ -125,16 +125,19 @@ end
 local function playerTurn()
 	displayHands()
 	while calcHandValue(playerHand) < 22 do
+		print("\nHit or Stand")
+		print("  1) Hit")
+		print("  2) Stand")
 		io.write("\nHit or Stand? ")
-		local action = string.lower(io.read())
-		if action == "hit" then
+		local action = tonumber(io.read())
+		if action == 1 then
 			table.insert(playerHand, dealCard())
 			clearScreen()
 			displayHands()
-		elseif action == "stand" then
+		elseif action == 2 then
 			break
 		else
-			print('Enter "hit" or "stand"')
+			print('Enter either "1" or "2"')
 		end
 	end
 
@@ -195,9 +198,9 @@ local playing = true
 
 while playing do
 	playRound()
-	io.write("\nPlay again? (yes/no) ")
+	io.write("\nPlay again? (y/n) ")
 	local answer = string.lower(io.read())
-	if answer == "no" then
+	if answer == "n" then
 		playing = false
 	end
 end
