@@ -1,0 +1,69 @@
+name: Build Lua-C Binaries
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: linux-arm64
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install build dependencies
+        run: |
+          apk add --no-cache \
+            build-base \
+            gcc \
+            musl-dev \
+            curl \
+            xxd
+
+      - name: Download Lua 5.4.7
+        run: |
+          curl -L https://www.lua.org/ftp/lua-5.4.7.tar.gz -o lua-5.4.7.tar.gz
+          tar xzf lua-5.4.7.tar.gz
+          rm lua-5.4.7.tar.gz
+
+      - name: Build Lua and luac
+        run: |
+          cd lua-5.4.7/src
+          make PLAT=linux
+          cd ../..
+
+      - name: Generate bytecode from Lua source
+        run: |
+          PROJECT_NAME=$(basename $GITEA_REPOSITORY | sed 's/^lua-//')
+          echo "PROJECT_NAME=$PROJECT_NAME" >> $GITHUB_ENV
+          ./lua-5.4.7/src/luac -o ${PROJECT_NAME}.luac ${PROJECT_NAME}.lua
+          xxd -i ${PROJECT_NAME}.luac > ${PROJECT_NAME}_bytecode.h
+
+      - name: Build for Linux ARM64
+        run: |
+          mkdir -p bin .build/lua .build/link/src
+          cp lua-5.4.7/src/*.{c,h} .build/lua/
+          cd .build/lua
+          
+          for f in lapi.c lcode.c lctype.c ldebug.c ldo.c ldump.c lfunc.c lgc.c llex.c lmem.c lobject.c lopcodes.c lparser.c lstate.c lstring.c ltable.c ltm.c lundump.c lvm.c lzio.c lauxlib.c lbaselib.c lcorolib.c ldblib.c liolib.c lmathlib.c loadlib.c loslib.c lstrlib.c ltablib.c lutf8lib.c linit.c; do
+            if [ -f "$f" ]; then
+              gcc -Wno-deprecated-declarations -c "$f" -o "${f%.c}.o"
+            fi
+          done
+          
+          ar rcs liblua.a *.o
+          cd ../..
+          cp .build/lua/liblua.a .build/link/src/
+          cp lua-5.4.7/src/*.h .build/link/src/
+          
+          gcc -o bin/${PROJECT_NAME}-linux-arm64 ${PROJECT_NAME}.c \
+            -I .build/link/src \
+            -L .build/link/src \
+            -llua -lm
+
+      - name: List artifacts
+        run: ls -lh bin/
