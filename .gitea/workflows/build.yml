@@ -11,9 +11,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        run: |
-          git clone https://gitea.taile9a1d6.ts.net/${{ gitea.repository }}.git .
-          git fetch --depth=0
+        run: git clone https://gitea.taile9a1d6.ts.net/${{ gitea.repository }}.git .
 
       - name: Install build dependencies
         run: |
