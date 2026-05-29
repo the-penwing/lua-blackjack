@@ -8,52 +8,50 @@ on:
 jobs:
   build:
     runs-on: linux-arm64
+    strategy:
+      matrix:
+        include:
+          - target: x86_64
+            cc: gcc
+            ar: ar
+          - target: arm64
+            cc: aarch64-linux-gnu-gcc
+            ar: aarch64-linux-gnu-ar
     
     steps:
-      - name: Checkout code
+      - name: Checkout
         run: git clone https://gitea.taile9a1d6.ts.net/${{ gitea.repository }}.git .
 
-      - name: Install build dependencies
+      - name: Install deps
         run: |
           apk add --no-cache \
-            build-base \
-            gcc \
-            musl-dev \
-            curl \
-            xxd \
-            git
+            build-base gcc musl-dev curl xxd git \
+            aarch64-linux-gnu-toolchain binutils-aarch64-linux-gnu
 
-      - name: Download Lua 5.4.7
+      - name: Download Lua
         run: |
           curl -L https://www.lua.org/ftp/lua-5.4.7.tar.gz -o lua-5.4.7.tar.gz
           tar xzf lua-5.4.7.tar.gz
-          rm lua-5.4.7.tar.gz
 
-      - name: Build Lua and luac
+      - name: Build Lua library
         run: |
-          cd lua-5.4.7/src
-          make PLAT=linux
-          cd ../..
-
-      - name: Build for Linux ARM64
-        run: |
-          PROJECT_NAME=$(basename $GITEA_REPOSITORY | sed 's/^lua-//')
-          mkdir -p bin .build/lua .build/link/src
+          mkdir -p .build/lua .build/link/src
           cp lua-5.4.7/src/*.{c,h} .build/lua/
           cd .build/lua
           
           for f in lapi.c lcode.c lctype.c ldebug.c ldo.c ldump.c lfunc.c lgc.c llex.c lmem.c lobject.c lopcodes.c lparser.c lstate.c lstring.c ltable.c ltm.c lundump.c lvm.c lzio.c lauxlib.c lbaselib.c lcorolib.c ldblib.c liolib.c lmathlib.c loadlib.c loslib.c lstrlib.c ltablib.c lutf8lib.c linit.c; do
-            if [ -f "$f" ]; then
-              gcc -Wno-deprecated-declarations -c "$f" -o "${f%.c}.o"
-            fi
+            [ -f "$f" ] && ${{ matrix.cc }} -Wno-deprecated-declarations -c "$f" -o "${f%.c}.o"
           done
           
-          ar rcs liblua.a *.o
+          ${{ matrix.ar }} rcs liblua.a *.o
           cd ../..
           cp .build/lua/liblua.a .build/link/src/
           cp lua-5.4.7/src/*.h .build/link/src/
-          
-          gcc -o bin/${PROJECT_NAME}-linux-arm64 ${PROJECT_NAME}.c \
+
+      - name: Build binary
+        run: |
+          mkdir -p bin
+          ${{ matrix.cc }} -o bin/blackjack-linux-${{ matrix.target }} blackjack.c \
             -I .build/link/src \
             -L .build/link/src \
             -llua -lm
