@@ -51,7 +51,7 @@ jobs:
 
       - name: Build for x86_64 (Linux)
         run: |
-          mkdir -p .build/lua .build/link/src
+          mkdir -p bin .build/lua .build/link/src
           
           # Copy Lua sources
           cp lua-5.4.7/src/*.{c,h} .build/lua/
@@ -79,7 +79,7 @@ jobs:
 
       - name: Build for ARM64 (Linux)
         run: |
-          mkdir -p .build/lua .build/link/src
+          mkdir -p bin .build/lua .build/link/src
           
           # Copy Lua sources
           cp lua-5.4.7/src/*.{c,h} .build/lua/
@@ -107,7 +107,7 @@ jobs:
 
       - name: Build for Windows
         run: |
-          mkdir -p .build/lua .build/link/src
+          mkdir -p bin .build/lua .build/link/src
           
           # Copy Lua sources
           cp lua-5.4.7/src/*.{c,h} .build/lua/
