@@ -1,11 +1,15 @@
 name: Build Lua-C Binaries
 
 on:
+  push:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: linux-arm64
+    container:
+      image: debian:bookworm
     strategy:
       matrix:
         include:
@@ -17,13 +21,13 @@ jobs:
             ar: aarch64-linux-gnu-ar
     
     steps:
-      - name: Checkout
-        run: git clone https://gitea.taile9a1d6.ts.net/${{ gitea.repository }}.git .
-
       - name: Install deps
         run: |
           apt-get update
-          apt-get install -y build-essential gcc curl xxd git crossbuild-essential-arm64 zip
+          apt-get install -y build-essential gcc curl xxd git crossbuild-essential-arm64
+
+      - name: Checkout
+        run: git clone https://gitea.taile9a1d6.ts.net/${{ gitea.repository }}.git .
 
       - name: Download & Build Lua
         run: |
@@ -31,15 +35,15 @@ jobs:
           tar xzf lua-5.4.7.tar.gz
           cd lua-5.4.7/src && make PLAT=linux && cd ../..
 
-      - name: Generate bytecode
+      - name: Generate bytecode header
         run: |
           PROJECT_NAME=$(basename $(pwd) | sed 's/^lua-//')
           ./lua-5.4.7/src/luac -o ${PROJECT_NAME}.luac ${PROJECT_NAME}.lua
           xxd -i ${PROJECT_NAME}.luac > ${PROJECT_NAME}_bytecode.h
 
-      - name: Build ${{ matrix.target }}
+      - name: Build Lua library for ${{ matrix.target }}
         run: |
-          mkdir -p .build/lua .build/link/src bin
+          mkdir -p .build/lua .build/link/src
           cd lua-5.4.7/src
           for f in *.c *.h; do
             [ -f "$f" ] && cp "$f" ../../.build/lua/
@@ -54,15 +58,14 @@ jobs:
           cd ../..
           cp .build/lua/liblua.a .build/link/src/
           cp .build/lua/*.h .build/link/src/
-          
-          PROJECT_NAME=$(basename $(pwd) | sed 's/^lua-//')
-          ${{ matrix.cc }} -o bin/blackjack-linux-${{ matrix.target }} ${PROJECT_NAME}.c \
+
+      - name: Build binary
+        run: |
+          mkdir -p bin
+          ${{ matrix.cc }} -o bin/blackjack-linux-${{ matrix.target }} blackjack.c \
             -I .build/link/src \
             -L .build/link/src \
             -llua -lm
 
-      - name: Create zip
-        run: |
-          mkdir -p blackjack-binaries
-          cp bin/blackjack-linux-* blackjack-binaries/
-          zip -r blackjack-binaries.zip blackjack-binaries/
+      - name: List artifacts
+        run: ls -lh bin/
