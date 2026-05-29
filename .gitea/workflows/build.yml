@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: linux-arm64
+    container:
+      image: debian:bookworm
     strategy:
       matrix:
         include:
@@ -24,9 +26,10 @@ jobs:
 
       - name: Install deps
         run: |
-          apk add --no-cache \
-            build-base gcc musl-dev curl xxd git \
-            aarch64-linux-gnu-toolchain binutils-aarch64-linux-gnu
+          apt-get update
+          apt-get install -y \
+            build-essential gcc curl xxd git \
+            crossbuild-essential-arm64
 
       - name: Download Lua
         run: |
