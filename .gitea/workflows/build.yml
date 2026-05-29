@@ -29,12 +29,19 @@ jobs:
       - name: Checkout
         run: git clone https://gitea.taile9a1d6.ts.net/${{ gitea.repository }}.git .
 
-      - name: Download Lua
+      - name: Download & Build Lua
         run: |
           curl -L https://www.lua.org/ftp/lua-5.4.7.tar.gz -o lua-5.4.7.tar.gz
           tar xzf lua-5.4.7.tar.gz
+          cd lua-5.4.7/src && make PLAT=linux && cd ../..
 
-      - name: Build Lua library
+      - name: Generate bytecode header
+        run: |
+          PROJECT_NAME=$(basename $(pwd) | sed 's/^lua-//')
+          ./lua-5.4.7/src/luac -o ${PROJECT_NAME}.luac ${PROJECT_NAME}.lua
+          xxd -i ${PROJECT_NAME}.luac > ${PROJECT_NAME}_bytecode.h
+
+      - name: Build Lua library for ${{ matrix.target }}
         run: |
           mkdir -p .build/lua .build/link/src
           cd lua-5.4.7/src
