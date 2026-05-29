@@ -19,8 +19,8 @@ jobs:
           sudo apt-get install -y \
             build-essential \
             gcc \
-            aarch64-linux-gnu-gcc \
-            aarch64-linux-gnu-binutils \
+            gcc-aarch64-linux-gnu \
+            binutils-aarch64-linux-gnu \
             mingw-w64 \
             xxd \
             curl
@@ -103,7 +103,7 @@ jobs:
           aarch64-linux-gnu-gcc -o bin/${PROJECT_NAME}-linux-arm64 ${PROJECT_NAME}.c \
             -I .build/link/src \
             -L .build/link/src \
-            -llua -lm
+            -llua -lm -static
 
       - name: Build for Windows
         run: |
