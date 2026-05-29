@@ -1,4 +1,4 @@
-name: Build Lua-C Binaries
+name: Release
 
 on:
   workflow_dispatch:
@@ -23,7 +23,7 @@ jobs:
       - name: Install deps
         run: |
           apt-get update
-          apt-get install -y build-essential gcc curl xxd git crossbuild-essential-arm64 zip
+          apt-get install -y build-essential gcc curl xxd git crossbuild-essential-arm64
 
       - name: Download & Build Lua
         run: |
@@ -61,8 +61,8 @@ jobs:
             -L .build/link/src \
             -llua -lm
 
-      - name: Create zip
+      - name: Upload binaries
         run: |
-          mkdir -p blackjack-binaries
-          cp bin/blackjack-linux-* blackjack-binaries/
-          zip -r blackjack-binaries.zip blackjack-binaries/
+          mkdir -p release-binaries
+          cp bin/blackjack-* release-binaries/
+          ls -lh release-binaries/
