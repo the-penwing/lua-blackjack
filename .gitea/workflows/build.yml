@@ -11,9 +11,9 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        run: |
+          git clone https://gitea.taile9a1d6.ts.net/${{ gitea.repository }}.git .
+          git fetch --depth=0
 
       - name: Install build dependencies
         run: |
@@ -22,7 +22,8 @@ jobs:
             gcc \
             musl-dev \
             curl \
-            xxd
+            xxd \
+            git
 
       - name: Download Lua 5.4.7
         run: |
@@ -36,15 +37,9 @@ jobs:
           make PLAT=linux
           cd ../..
 
-      - name: Generate bytecode from Lua source
-        run: |
-          PROJECT_NAME=$(basename $GITEA_REPOSITORY | sed 's/^lua-//')
-          echo "PROJECT_NAME=$PROJECT_NAME" >> $GITHUB_ENV
-          ./lua-5.4.7/src/luac -o ${PROJECT_NAME}.luac ${PROJECT_NAME}.lua
-          xxd -i ${PROJECT_NAME}.luac > ${PROJECT_NAME}_bytecode.h
-
       - name: Build for Linux ARM64
         run: |
+          PROJECT_NAME=$(basename $GITEA_REPOSITORY | sed 's/^lua-//')
           mkdir -p bin .build/lua .build/link/src
           cp lua-5.4.7/src/*.{c,h} .build/lua/
           cd .build/lua
