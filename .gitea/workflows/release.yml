@@ -29,7 +29,11 @@ jobs:
           apt-get install -y build-essential gcc curl xxd git crossbuild-essential-arm64
 
       - name: Checkout
-        uses: actions/checkout@v4
+        run: |
+          cd /tmp
+          git clone https://gitea.taile9a1d6.ts.net/${{ gitea.repository }}.git .
+          cd -
+          cp -r /tmp/* .
 
       - name: Download & Build Lua
         run: |
