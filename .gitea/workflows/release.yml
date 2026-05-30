@@ -29,11 +29,7 @@ jobs:
           apt-get install -y build-essential gcc curl xxd git crossbuild-essential-arm64
 
       - name: Checkout
-        run: |
-          cd /tmp
-          git clone https://gitea.taile9a1d6.ts.net/${{ gitea.repository }}.git .
-          cd -
-          cp -r /tmp/* .
+        run: git clone https://gitea.taile9a1d6.ts.net/${{ gitea.repository }}.git .
 
       - name: Download & Build Lua
         run: |
@@ -75,35 +71,26 @@ jobs:
             -L .build/link/src \
             -llua -lm
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: binaries-${{ matrix.target }}
-          path: bin/
-          retention-days: 1
+      - name: Upload to release
+        run: |
+          PROJECT_NAME=$(basename $(pwd) | sed 's/^lua-//')
+          BINARY="bin/${PROJECT_NAME}-linux-${{ matrix.target }}"
+          
+          curl -X POST https://gitea.taile9a1d6.ts.net/api/v1/repos/${{ gitea.repository }}/releases/tags/${{ github.event.inputs.version }}/assets \
+            -H "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
+            -F "attachment=@${BINARY}"
 
-  release:
-    needs: build
+  create-release:
     runs-on: linux-arm64
     container:
       image: debian:bookworm
     
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Prepare binaries
-        run: |
-          mkdir -p bin
-          find artifacts -name "blackjack-*" -exec cp {} bin/ \;
+      - name: Install curl
+        run: apt-get update && apt-get install -y curl
 
       - name: Create Gitea Release
         run: |
-          apt-get update && apt-get install -y curl
-          
-          # Create release
           curl -X POST https://gitea.taile9a1d6.ts.net/api/v1/repos/${{ gitea.repository }}/releases \
             -H "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
             -H "Content-Type: application/json" \
@@ -113,13 +100,4 @@ jobs:
               "body": "Cross-compiled binaries",
               "draft": false,
               "prerelease": false
-            }' \
-            -w "\n%{http_code}\n"
-          
-          # Upload each binary
-          for binary in bin/*; do
-            curl -X POST https://gitea.taile9a1d6.ts.net/api/v1/repos/${{ gitea.repository }}/releases/tags/${{ github.event.inputs.version }}/assets \
-              -H "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
-              -F "attachment=@${binary}" \
-              -w "\n%{http_code}\n"
-          done
+            }'
