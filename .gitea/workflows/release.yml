@@ -6,81 +6,132 @@ on:
       version:
         description: 'Release version (e.g., v1.0.0)'
         required: true
+        type: string
 
 jobs:
   build:
-    runs-on: linux-arm64
-    container:
-      image: debian:bookworm
+    runs-on: ubuntu-latest
     
     steps:
-      - name: Install deps
-        run: |
-          apt-get update
-          apt-get install -y build-essential gcc curl xxd git
-
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Download & Build Lua
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            gcc \
+            gcc-aarch64-linux-gnu \
+            binutils-aarch64-linux-gnu \
+            mingw-w64 \
+            xxd \
+            curl
+
+      - name: Download Lua 5.4.7
         run: |
           curl -L https://www.lua.org/ftp/lua-5.4.7.tar.gz -o lua-5.4.7.tar.gz
           tar xzf lua-5.4.7.tar.gz
-          cd lua-5.4.7/src && make PLAT=linux && cd ../..
+          rm lua-5.4.7.tar.gz
 
-      - name: Generate bytecode header
+      - name: Build Lua and luac
         run: |
-          PROJECT_NAME=$(basename $(pwd) | sed 's/^lua-//')
+          cd lua-5.4.7/src
+          make PLAT=linux
+          cd ../..
+
+      - name: Generate bytecode from Lua source
+        run: |
+          PROJECT_NAME=$(basename $GITHUB_REPOSITORY | sed 's/^lua-//')
           echo "PROJECT_NAME=$PROJECT_NAME" >> $GITHUB_ENV
+          
           ./lua-5.4.7/src/luac -o ${PROJECT_NAME}.luac ${PROJECT_NAME}.lua
           xxd -i ${PROJECT_NAME}.luac > ${PROJECT_NAME}_bytecode.h
 
-      - name: Build Lua library
+      - name: Build for x86_64 (Linux)
         run: |
-          mkdir -p .build/lua .build/link/src
-          cd lua-5.4.7/src
-          for f in *.c *.h; do
-            [ -f "$f" ] && cp "$f" ../../.build/lua/
-          done
-          cd ../../.build/lua
+          mkdir -p bin .build/lua .build/link/src
+          
+          cp lua-5.4.7/src/*.{c,h} .build/lua/
+          cd .build/lua
           
           for f in lapi.c lcode.c lctype.c ldebug.c ldo.c ldump.c lfunc.c lgc.c llex.c lmem.c lobject.c lopcodes.c lparser.c lstate.c lstring.c ltable.c ltm.c lundump.c lvm.c lzio.c lauxlib.c lbaselib.c lcorolib.c ldblib.c liolib.c lmathlib.c loadlib.c loslib.c lstrlib.c ltablib.c lutf8lib.c linit.c; do
-            [ -f "$f" ] && gcc -Wno-deprecated-declarations -c "$f" -o "${f%.c}.o"
+            if [ -f "$f" ]; then
+              gcc -Wno-deprecated-declarations -c "$f" -o "${f%.c}.o"
+            fi
           done
           
           ar rcs liblua.a *.o
           cd ../..
+          
           cp .build/lua/liblua.a .build/link/src/
-          cp .build/lua/*.h .build/link/src/
-
-      - name: Build binary
-        run: |
-          mkdir -p bin
-          gcc -o bin/${PROJECT_NAME}-linux-arm64 ${PROJECT_NAME}.c \
+          cp lua-5.4.7/src/*.h .build/link/src/
+          
+          gcc -o bin/${PROJECT_NAME}-linux-x86_64 ${PROJECT_NAME}.c \
             -I .build/link/src \
             -L .build/link/src \
             -llua -lm
 
-      - name: Create Gitea Release
+      - name: Build for ARM64 (Linux)
         run: |
-          # Get the binary path
-          BINARY=$(ls bin/${PROJECT_NAME}-*)
+          mkdir -p bin .build/lua .build/link/src
           
-          # Create release via Gitea API
-          curl -X POST https://gitea.taile9a1d6.ts.net/api/v1/repos/${{ gitea.repository }}/releases \
-            -H "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "tag_name": "${{ github.event.inputs.version }}",
-              "name": "Release ${{ github.event.inputs.version }}",
-              "body": "Binary release",
-              "draft": false,
-              "prerelease": false
-            }' \
-            -w "\n%{http_code}\n"
+          cp lua-5.4.7/src/*.{c,h} .build/lua/
+          cd .build/lua
           
-          # Upload binary
-          curl -X POST https://gitea.taile9a1d6.ts.net/api/v1/repos/${{ gitea.repository }}/releases/tags/${{ github.event.inputs.version }}/assets \
-            -H "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
-            -F "attachment=@${BINARY}" \
-            -w "\n%{http_code}\n"
+          for f in lapi.c lcode.c lctype.c ldebug.c ldo.c ldump.c lfunc.c lgc.c llex.c lmem.c lobject.c lopcodes.c lparser.c lstate.c lstring.c ltable.c ltm.c lundump.c lvm.c lzio.c lauxlib.c lbaselib.c lcorolib.c ldblib.c liolib.c lmathlib.c loadlib.c loslib.c lstrlib.c ltablib.c lutf8lib.c linit.c; do
+            if [ -f "$f" ]; then
+              aarch64-linux-gnu-gcc -Wno-deprecated-declarations -c "$f" -o "${f%.c}.o"
+            fi
+          done
+          
+          aarch64-linux-gnu-ar rcs liblua.a *.o
+          cd ../..
+          
+          cp .build/lua/liblua.a .build/link/src/
+          cp lua-5.4.7/src/*.h .build/link/src/
+          
+          aarch64-linux-gnu-gcc -o bin/${PROJECT_NAME}-linux-arm64 ${PROJECT_NAME}.c \
+            -I .build/link/src \
+            -L .build/link/src \
+            -llua -lm -static
+
+      - name: Build for Windows
+        run: |
+          mkdir -p bin .build/lua .build/link/src
+          
+          cp lua-5.4.7/src/*.{c,h} .build/lua/
+          cd .build/lua
+          
+          for f in lapi.c lcode.c lctype.c ldebug.c ldo.c ldump.c lfunc.c lgc.c llex.c lmem.c lobject.c lopcodes.c lparser.c lstate.c lstring.c ltable.c ltm.c lundump.c lvm.c lzio.c lauxlib.c lbaselib.c lcorolib.c ldblib.c liolib.c lmathlib.c loadlib.c loslib.c lstrlib.c ltablib.c lutf8lib.c linit.c; do
+            if [ -f "$f" ]; then
+              x86_64-w64-mingw32-gcc -Wno-deprecated-declarations -c "$f" -o "${f%.c}.o"
+            fi
+          done
+          
+          x86_64-w64-mingw32-ar rcs liblua.a *.o
+          cd ../..
+          
+          cp .build/lua/liblua.a .build/link/src/
+          cp lua-5.4.7/src/*.h .build/link/src/
+          
+          x86_64-w64-mingw32-gcc -o bin/${PROJECT_NAME}-windows.exe ${PROJECT_NAME}.c \
+            -I .build/link/src \
+            -L .build/link/src \
+            -llua
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          name: Release ${{ github.event.inputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            bin/${{ env.PROJECT_NAME }}-linux-x86_64
+            bin/${{ env.PROJECT_NAME }}-linux-arm64
+            bin/${{ env.PROJECT_NAME }}-windows.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
