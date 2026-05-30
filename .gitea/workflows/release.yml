@@ -1,29 +1,26 @@
-name: Release
+name: Build and Release Lua Binaries
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
 
 jobs:
   build:
     runs-on: linux-arm64
-    strategy:
-      matrix:
-        include:
-          - target: x86_64
-            cc: gcc
-            ar: ar
-          - target: arm64
-            cc: aarch64-linux-gnu-gcc
-            ar: aarch64-linux-gnu-ar
+    container:
+      image: debian:bookworm
     
     steps:
-      - name: Checkout
-        run: git clone https://gitea.taile9a1d6.ts.net/${{ gitea.repository }}.git .
-
       - name: Install deps
         run: |
           apt-get update
-          apt-get install -y build-essential gcc curl xxd git crossbuild-essential-arm64
+          apt-get install -y build-essential gcc curl xxd git
+
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Download & Build Lua
         run: |
@@ -31,15 +28,16 @@ jobs:
           tar xzf lua-5.4.7.tar.gz
           cd lua-5.4.7/src && make PLAT=linux && cd ../..
 
-      - name: Generate bytecode
+      - name: Generate bytecode header
         run: |
           PROJECT_NAME=$(basename $(pwd) | sed 's/^lua-//')
+          echo "PROJECT_NAME=$PROJECT_NAME" >> $GITHUB_ENV
           ./lua-5.4.7/src/luac -o ${PROJECT_NAME}.luac ${PROJECT_NAME}.lua
           xxd -i ${PROJECT_NAME}.luac > ${PROJECT_NAME}_bytecode.h
 
-      - name: Build ${{ matrix.target }}
+      - name: Build Lua library
         run: |
-          mkdir -p .build/lua .build/link/src bin
+          mkdir -p .build/lua .build/link/src
           cd lua-5.4.7/src
           for f in *.c *.h; do
             [ -f "$f" ] && cp "$f" ../../.build/lua/
@@ -47,22 +45,42 @@ jobs:
           cd ../../.build/lua
           
           for f in lapi.c lcode.c lctype.c ldebug.c ldo.c ldump.c lfunc.c lgc.c llex.c lmem.c lobject.c lopcodes.c lparser.c lstate.c lstring.c ltable.c ltm.c lundump.c lvm.c lzio.c lauxlib.c lbaselib.c lcorolib.c ldblib.c liolib.c lmathlib.c loadlib.c loslib.c lstrlib.c ltablib.c lutf8lib.c linit.c; do
-            [ -f "$f" ] && ${{ matrix.cc }} -Wno-deprecated-declarations -c "$f" -o "${f%.c}.o"
+            [ -f "$f" ] && gcc -Wno-deprecated-declarations -c "$f" -o "${f%.c}.o"
           done
           
-          ${{ matrix.ar }} rcs liblua.a *.o
+          ar rcs liblua.a *.o
           cd ../..
           cp .build/lua/liblua.a .build/link/src/
           cp .build/lua/*.h .build/link/src/
-          
-          PROJECT_NAME=$(basename $(pwd) | sed 's/^lua-//')
-          ${{ matrix.cc }} -o bin/blackjack-linux-${{ matrix.target }} ${PROJECT_NAME}.c \
+
+      - name: Build binary
+        run: |
+          mkdir -p bin
+          gcc -o bin/${PROJECT_NAME}-linux-arm64 ${PROJECT_NAME}.c \
             -I .build/link/src \
             -L .build/link/src \
             -llua -lm
 
-      - name: Upload binaries
+      - name: Create Gitea Release
         run: |
-          mkdir -p release-binaries
-          cp bin/blackjack-* release-binaries/
-          ls -lh release-binaries/
+          # Get the binary path
+          BINARY=$(ls bin/${PROJECT_NAME}-*)
+          
+          # Create release via Gitea API
+          curl -X POST https://gitea.taile9a1d6.ts.net/api/v1/repos/${{ gitea.repository }}/releases \
+            -H "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "tag_name": "${{ github.event.inputs.version }}",
+              "name": "Release ${{ github.event.inputs.version }}",
+              "body": "Binary release",
+              "draft": false,
+              "prerelease": false
+            }' \
+            -w "\n%{http_code}\n"
+          
+          # Upload binary
+          curl -X POST https://gitea.taile9a1d6.ts.net/api/v1/repos/${{ gitea.repository }}/releases/tags/${{ github.event.inputs.version }}/assets \
+            -H "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
+            -F "attachment=@${BINARY}" \
+            -w "\n%{http_code}\n"
