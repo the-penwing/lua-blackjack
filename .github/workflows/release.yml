@@ -123,6 +123,7 @@ jobs:
             -llua
 
       - name: Create GitHub Release
+        if: ${{ !env.ACT }}  # Skip locally
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.event.inputs.version }}

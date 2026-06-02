@@ -139,6 +139,7 @@ jobs:
           cp bin/${PROJECT_NAME}-* output/
 
       - name: Upload artifacts
+        if: ${{ !env.ACT }}  # Skip locally
         uses: actions/upload-artifact@v4
         with:
           name: binaries
