@@ -2,12 +2,14 @@
 
 Simple blackjack game written in lua over a weekend.
 
+<img src="./ai-free-badge.svg" width="150">
+
 ## Playing the Game
 
 There are 3 ways to install / play the game
 
 - [Running via Lua 5.5.0](#running-via-lua)
-- [Nix](#via-nix-and-nixos)
+- [Nix](#nix)
 - [Building the C Wrapper](./c-wrapper/building.md)
 
 ### Running via Lua
@@ -55,7 +57,7 @@ inputs = {
 };
 ```
 
-2. **Pass ``inputs.blackjack-cli`` to your outputs and add the package to your system or or home-manager profile:
+2. **Pass ``inputs.blackjack-cli`` to your outputs and add the package to your system or or home-manager profile:**
 
 ```nix
 outputs = { self, nixpkgs, blackjack-cli, ... }: {
