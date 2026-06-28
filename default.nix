@@ -23,17 +23,17 @@ stdenv.mkDerivation (finalAttrs: {
 
   buildPhase = ''
     mkdir .build
-    cp c-wrapper/blackjack.c .build
+    cp c-wrapper/blackjack-cli.c .build
     cp src/blackjack.lua .build
     cd .build
     luac -s -o blackjack.luac blackjack.lua
     xxd -i blackjack.luac blackjack.h
-    zig cc -O2 -I ${pkgs.lua5_5}/include -L ${pkgs.lua5_5}/lib -o blackjack blackjack.c -llua -lm
+    zig cc -O2 -I ${pkgs.lua5_5}/include -L ${pkgs.lua5_5}/lib -o blackjack-cli blackjack-cli.c -llua -lm
   '';
 
   installPhase = ''
     mkdir -p $out/bin
-    mv blackjack $out/bin/blackjack-cli
+    mv blackjack-cli $out/bin/blackjack-cli
   '';
 
   meta = {
