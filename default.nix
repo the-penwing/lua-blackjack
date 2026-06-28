@@ -33,11 +33,11 @@ stdenv.mkDerivation (finalAttrs: {
 
   installPhase = ''
     mkdir -p $out/bin
-    mv blackjack $out/bin/blackjack
+    mv blackjack $out/bin/blackjack-cli
   '';
 
   meta = {
-    description = "Blackjack in the terminal";
+    description = "Blackjack in The Terminal";
     homepage = "github.com/the-penwing/lua-blackjack";
     license = lib.licenses.mit;
   };
