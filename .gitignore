@@ -1,1 +1,24 @@
+# Build artifacts
+*.dll
+*.exe
+*.exe.pdb
+
+# Lua
+*.luac
+
+# Nix
 result
+result-*
+.envrc
+.dirlocal
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
