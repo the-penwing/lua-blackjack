@@ -57,17 +57,17 @@ inputs = {
 };
 ```
 
-2. **Pass ``inputs.blackjack-cli`` to your outputs and add the package to your system or or home-manager profile:**
+2. **Pass ``inputs.lua-blackjack`` to your outputs and add the package to your system or or home-manager profile:**
 
 ```nix
-outputs = { self, nixpkgs, blackjack-cli, ... }: {
+outputs = { self, nixpkgs, lua-blackjack, ... }: {
   # Example Flake Config
   nixosConfigurations."your-hostname" = nixpkgs.lib.nixosSystem {
     inherit system;
     modules = [
       ({ pkgs, ... }: {
         enviroment.systemPackages = [
-          blackjack-cli.packages.${system}.default
+          lua-blackjack.packages.${system}.default
         ];
       })
     ];
