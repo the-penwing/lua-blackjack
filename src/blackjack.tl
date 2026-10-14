@@ -6,10 +6,15 @@
 local suits = { 'Hearts', 'Diamonds', 'Spades', 'Clubs' }
 local ranks = { '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace' }
 
+local record Card
+  rank: string
+  suit: string
+end
+
 -- Game state
-local deck = {}
-local playerHand = {}
-local dealerHand = {}
+local deck: {Card} = {}
+local playerHand: {Card} = {}
+local dealerHand: {Card} = {}
 local wins = 0
 local losses = 0
 local ties = 0
@@ -26,7 +31,7 @@ local function buildDeck()
   end
 end
 
-local function shuffle(t)
+local function shuffle(t: {Card})
   for i = #t, 2, -1 do
     local j = math.random(i)
     t[i], t[j] = t[j], t[i]
@@ -39,7 +44,7 @@ local function initDeck()
   shuffle(deck)
 end
 
-local function dealCard()
+local function dealCard(): Card
   if #deck == 0 then
     return
   end
@@ -50,17 +55,17 @@ end
 -- CARD & HAND FUNCTIONS
 -- ============================================================================
 
-local function cardValue(card)
+local function cardValue(card: Card): integer
   if card.rank == 'Ace' then
     return 11
   elseif card.rank == 'King' or card.rank == 'Queen' or card.rank == 'Jack' then
     return 10
   else
-    return tonumber(card.rank)
+    return math.tointeger(card.rank)
   end
 end
 
-local function calcHandValue(hand)
+local function calcHandValue(hand: {Card}): number
   local total = 0
   local aces = 0
 
@@ -170,11 +175,9 @@ local function findWinner()
   elseif dealerValue > 21 then
     print('\nYou Win')
     wins = wins + 1
-    -- selene: allow(if_same_then_else)
   elseif playerValue > dealerValue then
     print('\nYou Win')
     wins = wins + 1
-    -- selene: allow(if_same_then_else)
   elseif dealerValue > playerValue then
     print('\nDealer Wins')
     losses = losses + 1
