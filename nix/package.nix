@@ -6,19 +6,25 @@ pkgs.stdenv.mkDerivation {
   src = pkgs.lib.fileset.toSource {
     root = ../.;
     fileset = pkgs.lib.fileset.unions [
+      ../tlconfig.lua
       ../src
     ];
   };
 
-  nativeBuildInputs = [pkgs.makeWrapper];
+  nativeBuildInputs = [
+    pkgs.makeWrapper
+    pkgs.lua53Packages.tl
+  ];
 
-  dontBuild = true;
+  buildPhase = ''
+    tl gen src/blackjack.tl
+  '';
 
   installPhase = ''
     mkdir -p $out/share/lua-blackjack $out/bin
-    cp -r src/* $out/share/lua-blackjack/
+    cp -r blackjack.lua $out/share/lua-blackjack/
 
-    makeWrapper ${pkgs.lua5_5}/bin/lua $out/bin/lua-blackjack \
+    makeWrapper ${pkgs.lua5_3}/bin/lua $out/bin/lua-blackjack \
       --add-flags "$out/share/lua-blackjack/blackjack.lua" \
       --set LUA_PATH "$out/share/lua-blackjack/?.lua;$out/share/lua-blackjack/?/init.lua;;"
   '';
