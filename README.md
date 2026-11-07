@@ -8,7 +8,7 @@ Simple blackjack game written in lua over a weekend.
 
 There are 3 ways to install / play the game
 
-- [Running via Lua 5.5.0](#running-via-lua)
+- [Running via Lua](#running-via-lua)
 - [Nix](#nix)
 - [Building the C Wrapper](./c-wrapper/building.md)
 
@@ -16,39 +16,39 @@ There are 3 ways to install / play the game
 
 Requirements
 
-- Lua 5.5 in your path
-- src/blackjack.lua on your system
+- Lua 5.3 in your path
+- Teal in your path (`luarocks install tl`)
 
-```bash
-lua ./blackjack.lua
+```shell
+git clone https://github.com/the-penwing/lua-blackjack.git
+cd lua-blackjack
+tl run src/blackjack.tl
 ```
-
-(Some systems require you to use `lua5.5`)
 
 ### Nix
 
 **Install**
 
-```bash
+```shell
 nix profile add github:the-penwing/lua-blackjack
 blackjack
 ```
 
 **Uninstall**
 
-```bash
+```shell
 nix profile remove blackjack
 ```
 
 **Run Without Installation**
 
-```bash
+```shell
 nix run github:the-penwing/lua-blackjack
 ```
 
 #### Using the Flake (Optional)
 
-1. **Add the game to your ``flake.nix`` inputs:**
+1. **Add the game to your `flake.nix` inputs:**
 
 ```nix
 inputs = {
@@ -57,7 +57,7 @@ inputs = {
 };
 ```
 
-2. **Pass ``inputs.lua-blackjack`` to your outputs and add the package to your system or or home-manager profile:**
+2. **Pass `inputs.lua-blackjack` to your outputs and add the package to your system or or home-manager profile:**
 
 ```nix
 outputs = { self, nixpkgs, lua-blackjack, ... }: {

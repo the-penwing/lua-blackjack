@@ -4,7 +4,7 @@
 
 - **C compiler** (gcc or clang is often included with Linux and OSX based systems)
 - **xxd** (Available from most package managers)
-- **Teal** (Available from luarocks or some package managers)
+- **Teal** (Available from luarocks or certain package managers)
 - **Lua 5.3.6 source**
 
 ## Setup (One-Time)
